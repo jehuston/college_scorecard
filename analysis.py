@@ -84,11 +84,11 @@ GROUP BY Year;
 query_perf_inc='''
 SELECT  COMP_ORIG_YR4_RT,
         LO_INC_COMP_ORIG_YR4_RT,
-        MD_INC_COMP_ORIG_YR4_RT,
+        -- MD_INC_COMP_ORIG_YR4_RT, -- privacy suppressed in almost every case
         HI_INC_COMP_ORIG_YR4_RT,
         Year
 FROM Scorecard
-WHERE UNITID=179867
+WHERE UNITID=179867 AND Year > 1999
 ORDER BY Year;
 '''
 # Get their UNITIDs, track other metrics through years.
@@ -115,6 +115,12 @@ ORDER BY Year;
 # build a large pd dataframe with above rows for all schools in Wash U's cohort.
 # identify those who are doing better (over time)
 
+# looks like overall completion rates are increasing over time, low income
+# were trailing high income but look to be catching up. Compare to other
+# schools and figure out if we are doing comparatively better/worse.
+# If leaders: use to our advantage! If not, what can we learn from others?
+
 result = c.execute(query_perf_inc)
 #print [r for r in result]
-print ["{0}: Overall {1}, Low {2}, Mid {3}, High {4}\n".format(r[4], r[0], r[1], r[2], r[3]) for r in result]
+answer = ["{0}: Overall {1}, Low {2}, High {3}".format(r[3], r[0], r[1], r[2]) for r in result]
+print "\n".join(answer)
