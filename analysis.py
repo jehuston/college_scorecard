@@ -117,15 +117,16 @@ ORDER BY Year;
 # answer = ["{0}: Overall {1}, Low {2}, High {3}".format(r[3], r[0], r[1], r[2]) for r in result]
 # print "\n".join(answer)
 
-data = pd.read_sql(query_perf_inc, conn)
-data.rename(columns = {'COMP_ORIG_YR4_RT' : 'all_students_rate', 'LO_INC_COMP_ORIG_YR4_RT':\
-    'low_income_rate', 'HI_INC_COMP_ORIG_YR4_RT' : 'high_income_rate', 'Year' :'year'}, inplace=True)
-data.loc[data['low_income_rate'] == 'PrivacySuppressed', 'low_income_rate'] = None
-data.loc[data['high_income_rate'] == 'PrivacySuppressed', 'high_income_rate'] = None
-print data.head()
+# data = pd.read_sql(query_perf_inc, conn)
+# data.rename(columns = {'COMP_ORIG_YR4_RT' : 'all_students_rate', 'LO_INC_COMP_ORIG_YR4_RT':\
+#     'low_income_rate', 'HI_INC_COMP_ORIG_YR4_RT' : 'high_income_rate', 'Year' :'year'}, inplace=True)
+# data.loc[data['low_income_rate'] == 'PrivacySuppressed', 'low_income_rate'] = None
+# data.loc[data['high_income_rate'] == 'PrivacySuppressed', 'high_income_rate'] = None
+# print data.head()
 
 '''
 Looking at plot of rates of income levels across time;
 possible that trend of high income students outperforming low income students
 in 4-year completion rates might be lessening or reversing but need to keep watching.
 '''
+all_schools = pd.read_sql(query_school_matches, conn)
