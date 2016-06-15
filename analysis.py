@@ -1,4 +1,7 @@
 import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+
 
 conn = sqlite3.connect('college.sqlite') #whatever database name is
 c = conn.cursor()
@@ -8,18 +11,7 @@ c = conn.cursor()
 # UNITID = 179867
 
 '''
-Some questions:
-Compare social sciences and some other degrees @ WashU.
-'''
-query_pctss='''
-SELECT PCIP45, Year
-FROM Scorecard
-WHERE UNITID = 179867;
-'''
-
-'''
-Look at change in ACT/SAT midpoint scores or percentiles over time
-CIP45BACHL = Bachelor's degree in Social Sciences (Y/N), PCIP45 = Percentage of SS
+Look at ACT/SAT midpoint scores
 '''
 query_scores='''
 SELECT  SATVRMID as SAT_verbal,
@@ -62,7 +54,7 @@ FROM Scorecard
 WHERE Year=2013
 AND ADM_RATE IS NOT NULL
 AND ADM_RATE != 0.0
-AND PREDDEG="Predominantly bachelor's-degree granting"
+AND PREDDEG="Predominantly bachelor's-degree granting";
 '''
 
 query_perf='''
@@ -120,7 +112,20 @@ ORDER BY Year;
 # schools and figure out if we are doing comparatively better/worse.
 # If leaders: use to our advantage! If not, what can we learn from others?
 
-result = c.execute(query_perf_inc)
-#print [r for r in result]
-answer = ["{0}: Overall {1}, Low {2}, High {3}".format(r[3], r[0], r[1], r[2]) for r in result]
-print "\n".join(answer)
+# result = c.execute(query_perf_inc)
+# #print [r for r in result]
+# answer = ["{0}: Overall {1}, Low {2}, High {3}".format(r[3], r[0], r[1], r[2]) for r in result]
+# print "\n".join(answer)
+
+data = pd.read_sql(query_perf_inc, conn)
+data.rename(columns = {'COMP_ORIG_YR4_RT' : 'all_students_rate', 'LO_INC_COMP_ORIG_YR4_RT':\
+    'low_income_rate', 'HI_INC_COMP_ORIG_YR4_RT' : 'high_income_rate', 'Year' :'year'}, inplace=True)
+data.loc[data['low_income_rate'] == 'PrivacySuppressed', 'low_income_rate'] = None
+data.loc[data['high_income_rate'] == 'PrivacySuppressed', 'high_income_rate'] = None
+print data.head()
+
+'''
+Looking at plot of rates of income levels across time;
+possible that trend of high income students outperforming low income students
+in 4-year completion rates might be lessening or reversing but need to keep watching.
+'''
