@@ -1,16 +1,25 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+import sqlite3
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from scipy.spatial.distance import pdist, squareform
-from scipy.cluster.hierarchy import linkage, dendrogram
+from scipy.cluster.hierarchy import linkage, dendrogram, cut_tree
 
-def clean_school_data(df, cols):
+def clean_school_data(df, complete=False):
     '''
     Impute missing values in schools data frame
     '''
-    for col in cols:
-        df.loc[df[col].isnull(), col ] = df[col].mean()
+    if complete:
+        df.rename(columns = {'COMP_ORIG_YR4_RT' : 'all_students_rate',\
+                    'LO_INC_COMP_ORIG_YR4_RT': 'low_income_rate', \
+                    'HI_INC_COMP_ORIG_YR4_RT' : 'high_income_rate', \
+                    'Year' :'year'}, inplace=True)
+        df.loc[df['low_income_rate'] == 'PrivacySuppressed', 'low_income_rate'] = None
+        df.loc[df['high_income_rate'] == 'PrivacySuppressed', 'high_income_rate'] = None
+
+    df = df.fillna(df.mean())
     return df
 
 def plot_rates(df, cols):
@@ -45,7 +54,7 @@ def make_kmeans(df):
     labels = km.labels_
     return best_k, labels
 
-def make_hier_clusters(df):
+def make_hier_clusters(df, n):
     '''
     Given dataframe of schools and attributes, use hierarchical clustering to
     find most similar schools.
@@ -53,11 +62,30 @@ def make_hier_clusters(df):
     vectors = df.iloc[:, 2:].values
     dist_matrix = squareform(pdist(vectors, metric='cosine'))
     link_matrix = linkage(dist_matrix, method='average')
-    return link_matrix
+    tree = cut_tree(link_matrix, n)
+    return link_matrix, tree
 
-def plot_dendrogram(matr):
+'''
+To think about: how to decide where best to cut the hierarchical tree?
+'''
+
+def plot_dendrogram(matr, fname=None):
     '''
     Given linkage matrix of schools, plot dendrogram
     '''
     plt.figure()
     dendrogram(matr)
+    if fname != None:
+        plt.savefig(fname)
+
+def get_matches(df, n=20, ID=179867):
+    clean = clean_school_data(df)
+    link_matr, tree = make_hier_clusters(clean, n)
+
+    idx = clean[clean['UNITID'] == ID].index[0]
+    match_idx = np.where(tree == tree[idx][0])[0] # where returns a tuple
+    match_df = clean.iloc[match_idx, :]
+    return match_df
+
+    # TODO make list of all id numbers for match schools, query to get complete info
+    
