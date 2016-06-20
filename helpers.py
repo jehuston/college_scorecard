@@ -29,7 +29,7 @@ def plot_rates(df, cols):
     '''
     for col in cols:
         lab = " ".join(col.split('_')[:2])
-        plt.plot(df['year'], data[col], '-o', label=lab)
+        plt.plot(df['year'], df[col], '-o', label=lab)
     plt.xlabel('Year')
     plt.ylabel('4-year completion rate')
     plt.title('Four year completion rates across income levels')
@@ -88,4 +88,3 @@ def get_matches(df, n=20, ID=179867):
     return match_df
 
     # TODO make list of all id numbers for match schools, query to get complete info
-    

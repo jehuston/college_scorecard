@@ -41,7 +41,7 @@ SELECT  UNITID,
         LO_INC_COMP_ORIG_YR4_RT, -- 4 yr completion rate for low income students
         HI_INC_COMP_ORIG_YR4_RT -- high income students
 FROM Scorecard
-WHERE UNITID=179867 -- add subquery to get for all ~150 match schools
+WHERE UNITID in {0} -- add subquery to get for all ~150 match schools
 ORDER BY Year;
 
 '''
@@ -79,3 +79,11 @@ if __name__ == '__main__':
     conn = sqlite3.connect('college.sqlite') #must be in home directory
     all_schools = pd.read_sql(query_school_matches, conn)
     matches = get_matches(all_schools)
+    ids = matches['UNITID'].tolist()
+
+    placeholder= '?' # For SQLite. See DBAPI paramstyle.
+    placeholders= ', '.join(placeholder for _ in ids)
+    c = conn.cursor()
+    c.execute(query_perf.format(placeholders), ids) ## see if this works?
+    ## pandas alternative:
+    #match_school_info = pd.read_sql(query_perf.format(placeholders), params=ids)
