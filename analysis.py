@@ -78,12 +78,12 @@ If leaders: use to our advantage! If not, what can we learn from others?
 if __name__ == '__main__':
     conn = sqlite3.connect('college.sqlite') #must be in home directory
     all_schools = pd.read_sql(query_school_matches, conn)
-    matches = get_matches(all_schools)
-    ids = matches['UNITID'].tolist()
-
-    placeholder= '?' # For SQLite. See DBAPI paramstyle.
-    placeholders= ', '.join(placeholder for _ in ids)
-    c = conn.cursor()
-    c.execute(query_perf.format(placeholders), ids) ## see if this works?
+    # matches = get_matches(all_schools)
+    # ids = matches['UNITID'].tolist()
+    #
+    # placeholder= '?' # For SQLite. See DBAPI paramstyle.
+    # placeholders= ', '.join(placeholder for _ in ids)
+    # c = conn.cursor()
+    # c.execute(query_perf.format(placeholders), ids) ## see if this works?
     ## pandas alternative:
     #match_school_info = pd.read_sql(query_perf.format(placeholders), params=ids)

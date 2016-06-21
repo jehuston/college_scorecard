@@ -2,12 +2,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import sqlite3
+from sklearn.preprocessing import scale
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from scipy.spatial.distance import pdist, squareform
 from scipy.cluster.hierarchy import linkage, dendrogram, cut_tree
 
-def clean_school_data(df, complete=False):
+def clean_school_data(df, complete=False, impute=False):
     '''
     Impute missing values in schools data frame
     '''
@@ -19,7 +20,8 @@ def clean_school_data(df, complete=False):
         df.loc[df['low_income_rate'] == 'PrivacySuppressed', 'low_income_rate'] = None
         df.loc[df['high_income_rate'] == 'PrivacySuppressed', 'high_income_rate'] = None
 
-    df = df.fillna(df.mean())
+    if impute:
+        df = df.fillna(df.mean()) # don't impute for plotting!
     return df
 
 def plot_rates(df, cols):
@@ -35,20 +37,21 @@ def plot_rates(df, cols):
     plt.title('Four year completion rates across income levels')
     plt.legend(loc=4)
 
-def make_kmeans(df):
+def make_kmeans(df): # SO much better!
     '''
     Given dataframe of schools and chosen attributes, use KMeans clustering to find
     ideal number of clusters and by extension, similar schools.
     '''
     vectors = df.iloc[:, 2:].values #skip columns with id #s, school name
-    clusters = range(2, 20)
+    vectors = scale(vectors)
+    clusters = range(20, 100, 10)
     scores = np.zeros(len(clusters))
     for i, k in enumerate(clusters):
         km = KMeans(n_clusters=k)
         km.fit(vectors)
         scores[i] = silhouette_score(vectors, km.labels_)
 
-    best_k = clusters[argmax(scores)]
+    best_k = clusters[np.argmax(scores)]
     km = KMeans(n_clusters=best_k)
     km.fit(vectors)
     labels = km.labels_
@@ -60,14 +63,12 @@ def make_hier_clusters(df, n):
     find most similar schools.
     '''
     vectors = df.iloc[:, 2:].values
+    vectors = scale(vectors)
     dist_matrix = squareform(pdist(vectors, metric='cosine'))
     link_matrix = linkage(dist_matrix, method='average')
     tree = cut_tree(link_matrix, n)
     return link_matrix, tree
 
-'''
-To think about: how to decide where best to cut the hierarchical tree?
-'''
 
 def plot_dendrogram(matr, fname=None):
     '''
@@ -78,13 +79,16 @@ def plot_dendrogram(matr, fname=None):
     if fname != None:
         plt.savefig(fname)
 
-def get_matches(df, n=20, ID=179867):
-    clean = clean_school_data(df)
-    link_matr, tree = make_hier_clusters(clean, n)
+def get_matches(df, method, n=20, ID=179867):
+    clean = clean_school_data(df, impute=True)
+
+    if method == 'hier':
+        _, labels = make_hier_clusters(clean, n)
+
+    elif method == 'k':
+        _, labels = make_kmeans(clean)
 
     idx = clean[clean['UNITID'] == ID].index[0]
-    match_idx = np.where(tree == tree[idx][0])[0] # where returns a tuple
+    match_idx = np.where(labels == labels[idx])[0] # where returns a tuple
     match_df = clean.iloc[match_idx, :]
     return match_df
-
-    # TODO make list of all id numbers for match schools, query to get complete info
