@@ -12,30 +12,29 @@ def clean_school_data(df, complete=False, impute=False):
     '''
     Impute missing values in schools data frame
     '''
+    dfc = df.copy()
+    dfc.columns = map(str.lower, df.columns)
     if complete:
-        df.rename(columns = {'COMP_ORIG_YR4_RT' : 'all_students_rate',\
-                    'LO_INC_COMP_ORIG_YR4_RT': 'low_income_rate', \
-                    'HI_INC_COMP_ORIG_YR4_RT' : 'high_income_rate', \
-                    'Year' :'year'}, inplace=True)
-        df.loc[df['low_income_rate'] == 'PrivacySuppressed', 'low_income_rate'] = None
-        df.loc[df['high_income_rate'] == 'PrivacySuppressed', 'high_income_rate'] = None
+        dfc.loc[dfc['lo_inc_comp_orig_yr4_rt'] == 'PrivacySuppressed', 'lo_inc_comp_orig_yr4_rt'] = None
+        dfc.loc[dfc['hi_inc_comp_orig_yr4_rt'] == 'PrivacySuppressed', 'hi_inc_comp_orig_yr4_rt'] = None
 
     if impute:
-        df = df.fillna(df.mean()) # don't impute for plotting!
-    return df
+        dfc = dfc.fillna(dfc.mean()) # don't impute for plotting!
+    return dfc
 
-def plot_rates(df, cols):
+def filter_dataframe(df, col):
     '''
-    Given dataframe with rates across income levels, plot rates over years
-    (in 'year' column)
+    Filter dataframe based on column to only rows where column is not null
     '''
-    for col in cols:
-        lab = " ".join(col.split('_')[:2])
-        plt.plot(df['year'], df[col], '-o', label=lab)
-    plt.xlabel('Year')
-    plt.ylabel('4-year completion rate')
-    plt.title('Four year completion rates across income levels')
-    plt.legend(loc=4)
+    dfc = df.copy()
+    dfc = dfc[dfc[col].notnull()]
+    dfc.loc[ :, col] = dfc[col].astype(float)
+    return dfc
+
+def group_dataframe():
+    #? worth it
+    pass
+
 
 def make_kmeans(df): # SO much better!
     '''
@@ -79,16 +78,47 @@ def plot_dendrogram(matr, fname=None):
     if fname != None:
         plt.savefig(fname)
 
+def plot_rates(df, cols, fname=None):
+    '''
+    Given dataframe with rates across income levels, plot rates over years
+    (in 'year' column)
+    '''
+    for col in cols:
+        lab = " ".join(col.split('_')[:2])
+        plt.plot(df['year'], df[col], '-o', label=lab)
+    plt.xlabel('Year')
+    plt.ylabel('4-year completion rate')
+    plt.title('Four year completion rates across income levels')
+    plt.legend(loc=4)
+
+    if fname != None:
+        plt.savefig(fname)
+
 def get_matches(df, method, n=20, ID=179867):
     clean = clean_school_data(df, impute=True)
 
     if method == 'hier':
         _, labels = make_hier_clusters(clean, n)
 
-    elif method == 'k':
+    elif method == 'kmeans':
         _, labels = make_kmeans(clean)
 
-    idx = clean[clean['UNITID'] == ID].index[0]
+    idx = clean[clean['unitid'] == ID].index[0]
     match_idx = np.where(labels == labels[idx])[0] # where returns a tuple
     match_df = clean.iloc[match_idx, :]
     return match_df
+
+def plot_average_rates(df):
+    df_hi = filter_dataframe(df, 'hi_inc_comp_orig_yr4_rt')
+    df_low = filter_dataframe(df, 'lo_inc_comp_orig_yr4_rt')
+    high_incomes = df_hi.groupby('year')['hi_inc_comp_orig_yr4_rt'].mean()
+    low_incomes = df_low.groupby('year')['lo_inc_comp_orig_yr4_rt'].mean()
+    plt.plot(high_incomes, '-o', label='High income')
+    plt.plot(low_incomes, '-o', label='Low income')
+    plt.xlabel('Year')
+    plt.ylabel('4-year completion rate')
+    plt.title('Average four year completion rates across similar schools')
+    plt.legend(loc=4)  
+
+## imputing n:
+# wu['sum_inc_levels'] = wu[['HI_INC_YR4_N', 'MD_INC_YR4_N', 'LO_INC_YR4_N']].sum(axis = 1, skipna=True)
