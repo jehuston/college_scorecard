@@ -82,7 +82,7 @@ def plot_rates(df, cols, fname=None):
     '''
     for col in cols:
         lab = " ".join(col.split('_')[:2])
-        plt.plot(df['year'], df[col], '-o', label=lab)
+        plt.plot(df['year'], df[col], '-o', label='WashU') #lab)
     plt.xlabel('Year')
     plt.ylabel('4-year completion rate')
     plt.title('Four year completion rates across income levels')
@@ -105,27 +105,45 @@ def get_matches(df, method, n=20, ID=179867):
     match_df = clean.iloc[match_idx, :]
     return match_df
 
+def plot_average_line(df, rt_col, n_col, label):
+    '''
+    compute and plot 1 group's national average
+    '''
+    df = filter_dataframe(df, rt_col)
+    df['num'] = df[rt_col] * df[n_col]
+    grouped = df.groupby('year').aggregate(sum)
+    grouped['avg_rate'] = grouped['num'] / grouped[n_col]
+    plt.plot(grouped['avg_rate'], '-o', label=label)
+
+
 def plot_average_rates(df, fname=None):
+    '''
+    Compare national average 4-year completion rates for low and high income students.
+    '''
+    # prep data
     df_hi = filter_dataframe(df, 'hi_inc_comp_orig_yr4_rt')
     df_low = filter_dataframe(df, 'lo_inc_comp_orig_yr4_rt')
-    high_incomes = df_hi.groupby('year')['hi_inc_comp_orig_yr4_rt'].mean()
-    low_incomes = df_low.groupby('year')['lo_inc_comp_orig_yr4_rt'].mean()
-    plt.plot(high_incomes, '-o', label='High income')
-    plt.plot(low_incomes, '-o', label='Low income')
+    df_low['lo_inc_yr4_n'] = df_low['lo_inc_yr4_n'].astype('int')
+    df_hi['hi_inc_yr4_n'] = df_hi['hi_inc_yr4_n'].astype('int')
+
+    plot_average_line(df_hi, 'hi_inc_comp_orig_yr4_rt', 'hi_inc_yr4_n', 'High income')
+    plot_average_line(df_low, 'lo_inc_comp_orig_yr4_rt', 'lo_inc_yr4_n', 'Low income')
     plt.xlabel('Year')
     plt.ylabel('4-year completion rate')
-    plt.title('Average four year completion rates across similar schools')
+    plt.title('Average four year completion rate across similar schools')
     plt.legend(loc=4)
 
     if fname != None:
         plt.savefig(fname)
 
 def find_z_test(p1, p2, n1, n2):
+    '''
+    Conduct z-test for 2 proportions, return p-value.
+    null : p1 - p2 = 0
+    alt: p1 - p2 != 0
+    '''
     pooled_p = (p1*n1 + p2*n2)/(n1 + n2)
     SE = np.sqrt(pooled_p*(1-pooled_p)*((1./n1) + (1./n2)))
     z = (p1 - p2)/SE
     p = (1 - scs.norm.cdf(abs(z)))*2
     return z, p
-
-## imputing n:
-# wu['sum_inc_levels'] = wu[['HI_INC_YR4_N', 'MD_INC_YR4_N', 'LO_INC_YR4_N']].sum(axis = 1, skipna=True)

@@ -98,7 +98,3 @@ if __name__ == '__main__':
     placeholders = ', '.join(placeholder for _ in ids)
     match_school_info = pd.read_sql(query_perf.format(placeholders), conn, params=ids)
     clean_matches = clean_school_data(match_school_info, complete=True)
-    plot_average_rates(clean_matches, fname='averages.png')
-
-    ## 2011 rates for z-test
-    #wu_2011=pd.read_sql(query_props, conn)
