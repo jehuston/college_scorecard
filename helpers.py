@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import sqlite3
+import scipy.stats as scs
 from sklearn.preprocessing import scale
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
@@ -30,10 +31,6 @@ def filter_dataframe(df, col):
     dfc = dfc[dfc[col].notnull()]
     dfc.loc[ :, col] = dfc[col].astype(float)
     return dfc
-
-def group_dataframe():
-    #? worth it
-    pass
 
 
 def make_kmeans(df): # SO much better!
@@ -108,7 +105,7 @@ def get_matches(df, method, n=20, ID=179867):
     match_df = clean.iloc[match_idx, :]
     return match_df
 
-def plot_average_rates(df):
+def plot_average_rates(df, fname=None):
     df_hi = filter_dataframe(df, 'hi_inc_comp_orig_yr4_rt')
     df_low = filter_dataframe(df, 'lo_inc_comp_orig_yr4_rt')
     high_incomes = df_hi.groupby('year')['hi_inc_comp_orig_yr4_rt'].mean()
@@ -118,7 +115,17 @@ def plot_average_rates(df):
     plt.xlabel('Year')
     plt.ylabel('4-year completion rate')
     plt.title('Average four year completion rates across similar schools')
-    plt.legend(loc=4)  
+    plt.legend(loc=4)
+
+    if fname != None:
+        plt.savefig(fname)
+
+def find_z_test(p1, p2, n1, n2):
+    pooled_p = (p1*n1 + p2*n2)/(n1 + n2)
+    SE = np.sqrt(pooled_p*(1-pooled_p)*((1./n1) + (1./n2)))
+    z = (p1 - p2)/SE
+    p = (1 - scs.norm.cdf(abs(z)))*2
+    return z, p
 
 ## imputing n:
 # wu['sum_inc_levels'] = wu[['HI_INC_YR4_N', 'MD_INC_YR4_N', 'LO_INC_YR4_N']].sum(axis = 1, skipna=True)
